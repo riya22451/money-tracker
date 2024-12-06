@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Expense Tracker</title>
+    <style>
+          body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f5f5f5;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        header {
+            background-color: #007BFF;
+            color: white;
+            padding: 1rem;
+            text-align: center;
+        }
+
+        .container {
+            width: 80%;
+            margin: auto;
+            overflow: auto;
+            padding: 20px;
+        }
+
+        #login-page {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+
+        #login-form {
+            text-align: center;
+        }
+
+        #login-form label {
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        #login-form input {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 16px;
+        }
+
+        #login-form .password-container {
+            position: relative;
+        }
+
+        #password {
+            width: calc(100% - 28px);
+        }
+
+        #toggle-password {
+            position: absolute;
+            right: 0;
+            top: 0;
+            bottom: 0;
+            margin: auto;
+            cursor: pointer;
+        }
+
+        #login-form button {
+            background-color: #007BFF;
+            color: white;
+            padding: 10px;
+            border: none;
+            cursor: pointer;
+        }
+
+        #terms-condition {
+            margin-top: 10px;
+            text-align: left;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .high-expense {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+
+        .low-expense {
+            background-color: #d4edda;
+            color: #155724;
+        }
+
+        .low-balance {
+            color: #721c24;
+            font-weight: bold;
+        }
+
+        #total-expenses {
+            font-weight: bold;
+        }
+
+        #low-budget-warning {
+            display: none;
+            background-color: #f8d7da;
+            color: #721c24;
+            padding: 10px;
+            margin-top: 10px;
+            border: 1px solid #f5c6cb;
+        }
+
+        #expense-form, #bill-form {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        #expense-form label, #bill-form label {
+            width: 100%;
+            margin-bottom: 8px;
+        }
+
+        #expense-form input, #bill-form input {
+            width: calc(100% - 16px);
+            padding: 8px;
+            margin-bottom: 16px;
+        }
+
+        #add-expense, #add-bill {
+            align-self: flex-start;
+            background-color: #007BFF;
+            color: white;
+            padding: 10px;
+            border: none;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+        <!-- Login Page -->
+    <div class="container" id="login-page">
+        <form id="login-form">
+            <h2>Login to Money Manager</h2>
+            <label for="username">Username</label>
+            <input type="text" id="username" required>
+
+            <label for="password" class="password-container">Password
+                <input type="password" id="password" required>
+                <span id="toggle-password" onclick="togglePasswordVisibility()">👁️</span>
+            </label>
+
+            <div id="terms-condition">
+                <input type="checkbox" id="agree" required>
+                <label for="agree">I agree to the Terms and Conditions</label>
+            </div>
+
+            <button type="button" onclick="login()">Login</button>
+        </form>
+    </div>
+
+    <!-- Money Manager Page -->
+    <div class="container" id="expense-tracker-page" style="display: none;">
+        <header>
+            <h1>Money Manager</h1>
+        </header>
+
+        <form id="expense-form">
+            <label for="description">Description</label>
+            <input type="text" id="description" required>
+
+            <label for="amount">Amount</label>
+            <input type="number" id="amount" min="0" step="0.01" required>
+
+            <label for="total-budget">Total Budget</label>
+            <input type="number" id="total-budget" min="0" step="0.01" required>
+
+            <button type="button" onclick="addExpense()" id="add-expense">Add Expense</button>
+        </form>
+
+        <div id="budget-left">Budget Left: ₹0.00</div>
+
+        <h2>Expenses</h2>
+        <table id="expenses-table">
+            <thead>
+                <tr>
+                    <th>Description</th>
+                    <th>Amount</th>
+                    <th>Status</th>
+                    <th>Remaining Budget</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+        <div id="total-expenses">Total Expenses: ₹0.00</div>
+
+        <div id="low-budget-warning" class="alert alert-danger">
+            Low budget warning: Only ₹<span id="remaining-budget-warning">0.00</span> left!
+        </div>
+
+        <!-- Bill Reminder Section -->
+        <h2>Bill Reminders</h2>
+        <table id="bills-table">
+            <thead>
+                <tr>
+                    <th>Description</th>
+                    <th>Amount</th>
+                    <th>Due Date</th>
+                    <th>Reminder</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+
+    <!-- Add Bill Form -->
+    <h2>Add Bill</h2>
+    <form id="bill-form">
+        <label for="bill-description">Description</label>
+        <input type="text" id="bill-description" required>
+
+        <label for="bill-amount">Amount</label>
+        <input type="number" id="bill-amount" min="0" step="0.01" required>
+
+        <label for="due-date">Due Date</label>
+        <input type="date" id="due-date" required>
+
+        <div id="set-reminder-container">
+            <label for="reminder">Set Reminder</label>
+            <input type="checkbox" id="reminder">
+        </div>
+
+        <label for="bill-status">Bill Status</label>
+        <input type="checkbox" id="bill-status" name="bill-status"> Paid
+
+        <button type="button" id="add-bill">Add Bill</button>
+    </form>
+<!-- Suggestion Box -->
+        <div id="suggestion-box">
+            <h2>Money Saving Tips</h2>
+            <ul>
+                <li>Track your expenses regularly to identify unnecessary spending.</li>
+                <li>Create a monthly budget and stick to it.</li>
+                <li>Consider cooking at home instead of dining out frequently.</li>
+                <li>Explore discount and cashback offers while shopping.</li>
+                <li>Invest in financial literacy by reading books. Check out these recommended books:
+                    <ul>
+                        <li><a href="https://www.amazon.com/Rich-Dad-Poor-Teach-Middle/dp/1612680194" target="_blank">Book 1: Rich Dad Poor Dad</a></li>
+                        <li><a href="https://www.amazon.com/Psychology-Money-Timeless-lessons-happiness/dp/0857197681/ref=pd_rhf_dp_s_pd_crcbs_d_sccl_1_3/130-6675203-6928914?pd_rd_w=eB5JI&content-id=amzn1.sym.31346ea4-6dbc-4ac4-b4f3-cbf5f8cab4b9&pf_rd_p=31346ea4-6dbc-4ac4-b4f3-cbf5f8cab4b9&pf_rd_r=1SM84H8G7H90RF7S9V6G&pd_rd_wg=fZw3x&pd_rd_r=a9efa48d-3eda-4e01-96bb-4c70994051a3&pd_rd_i=0857197681&psc=1" target="_blank">Book 2: Psychology of Money</a></li>
+                        <!-- Add more book links as needed -->
+                    </ul>
+                </li>
+            </ul>
+        </div>
+    </div>
+    
+    <script>
+         let totalExpenses = 0;
+    let totalBudget = 0;
+    let totalBills = 0;
+
+    function togglePasswordVisibility() {
+        const passwordInput = document.getElementById('password');
+        const togglePassword = document.getElementById('toggle-password');
+        const type = passwordInput.type === 'password' ? 'text' : 'password';
+        passwordInput.type = type;
+        togglePassword.textContent = type === 'password' ? '👁️' : '👁️';
+    }
+
+    function login() {
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
+
+        if (username === 'user' && password === 'password') {
+            // Show Expense Tracker page and hide Login page
+            document.getElementById('login-page').style.display = 'none';
+            document.getElementById('expense-tracker-page').style.display = 'block';
+        } else {
+            alert('Invalid username or password. Please try again.');
+        }
+    }
+function togglePasswordVisibility() {
+    const passwordInput = document.getElementById('password');
+    const togglePassword = document.getElementById('toggle-password');
+    const type = passwordInput.type === 'password' ? 'text' : 'password';
+    passwordInput.type = type;
+    togglePassword.textContent = type === 'password' ? '👁️' : '👁️';
+}
+
+function addExpense() {
+    const description = document.getElementById('description').value;
+    const amount = parseFloat(document.getElementById('amount').value);
+
+    if (isNaN(amount) || amount <= 0) {
+        alert('Please enter a valid amount.');
+        return;
+    }
+
+    if (amount > totalBudget - totalExpenses) {
+        alert('Expense exceeds available budget.');
+        return;
+    }
+
+    const tableBody = document.querySelector('#expenses-table tbody');
+    const newRow = tableBody.insertRow();
+
+    const cell1 = newRow.insertCell(0);
+    const cell2 = newRow.insertCell(1);
+    const cell3 = newRow.insertCell(2);
+    const cell4 = newRow.insertCell(3);
+    const cell5 = newRow.insertCell(4);
+
+    cell1.textContent = description;
+    cell2.textContent = '₹' + amount.toFixed(2);
+
+    if (amount > 50) {
+        newRow.classList.add('high-expense');
+    } else {
+        newRow.classList.add('low-expense');
+    }
+
+    totalExpenses += amount;
+
+    document.getElementById('total-expenses').textContent = 'Total Expenses: ₹' + totalExpenses.toFixed(2);
+
+    const remainingBudget = totalBudget - totalExpenses;
+    cell4.textContent = '₹' + remainingBudget.toFixed(2);
+
+    const removeButton = document.createElement('button');
+    removeButton.textContent = 'Remove';
+    removeButton.addEventListener('click', function () {
+        removeExpense(newRow, amount);
+    });
+    cell5.appendChild(removeButton);
+
+    updateBudgetLeft();
+
+    if (remainingBudget <= 100) {
+        document.getElementById('low-budget-warning').style.display = 'block';
+        document.getElementById('remaining-budget-warning').textContent = remainingBudget.toFixed(2);
+        alert('Low budget warning: Only ₹' + remainingBudget.toFixed(2) + ' left!');
+    } else {
+        document.getElementById('low-budget-warning').style.display = 'none';
+    }
+
+    document.getElementById('description').value = '';
+    document.getElementById('amount').value = '';
+    document.getElementById('total-budget').value = '';
+}
+
+function removeExpense(row, amount) {
+    row.remove();
+    totalExpenses -= amount;
+    document.getElementById('total-expenses').textContent = 'Total Expenses: ₹' + totalExpenses.toFixed(2);
+
+    const remainingBudget = totalBudget - totalExpenses;
+    document.getElementById('budget-left').textContent = 'Budget Left: ₹' + remainingBudget.toFixed(2);
+
+    if (remainingBudget <= 100) {
+        document.getElementById('low-budget-warning').style.display = 'block';
+        document.getElementById('remaining-budget-warning').textContent = remainingBudget.toFixed(2);
+        alert('Low budget warning: Only ₹' + remainingBudget.toFixed(2) + ' left!');
+    } else {
+        document.getElementById('low-budget-warning').style.display = 'none';
+    }
+}
+
+function updateBudgetLeft() {
+    const budgetLeft = totalBudget - totalExpenses;
+    document.getElementById('budget-left').textContent = 'Budget Left: ₹' + budgetLeft.toFixed(2);
+}
+
+
+        function addBill() {
+            const billDescription = document.getElementById('bill-description').value;
+            const billAmount = parseFloat(document.getElementById('bill-amount').value);
+            const dueDate = document.getElementById('due-date').value;
+            const reminder = document.getElementById('reminder').checked;
+            const isPaid = document.getElementById('bill-status').checked;
+
+            if (isNaN(billAmount) || billAmount <= 0 || !dueDate) {
+                alert('Please enter valid bill details.');
+                return;
+            }
+
+            const billsTableBody = document.querySelector('#bills-table tbody');
+            const newRow = billsTableBody.insertRow();
+
+            const cell1 = newRow.insertCell(0);
+            const cell2 = newRow.insertCell(1);
+            const cell3 = newRow.insertCell(2);
+            const cell4 = newRow.insertCell(3);
+            const cell5 = newRow.insertCell(4);
+            const cell6 = newRow.insertCell(5);
+
+            cell1.textContent = billDescription;
+            cell2.textContent = '₹' + billAmount.toFixed(2);
+            cell3.textContent = dueDate;
+            cell4.textContent = reminder ? 'Yes' : 'No';
+            cell5.textContent = isPaid ? 'Paid' : 'Not Paid';
+
+            totalBills += billAmount;
+
+            const payButton = document.createElement('button');
+            payButton.textContent = 'Pay';
+            payButton.addEventListener('click', function () {
+                payBill(newRow, billAmount);
+            });
+            cell6.appendChild(payButton);
+
+            updateRemainingBudget();
+
+            document.getElementById('bill-description').value = '';
+            document.getElementById('bill-amount').value = '';
+            document.getElementById('due-date').value = '';
+            document.getElementById('reminder').checked = false;
+            document.getElementById('bill-status').checked = false;
+        }
+function payBill(row, billAmount) {
+    row.cells[4].textContent = 'Paid';
+    totalBills -= Amount;
+    updateRemainingBudget();
+}
+
+function updateRemainingBudget() {
+    const remainingBudget = totalBudget - totalExpenses - totalBills;
+    document.getElementById('budget-left').textContent = 'Budget Left: ₹' + remainingBudget.toFixed(2);
+
+    if (remainingBudget <= 100) {
+        document.getElementById('low-budget-warning').style.display = 'block';
+        document.getElementById('remaining-budget-warning').textContent = remainingBudget.toFixed(2);
+        alert('Low budget warning: Only ₹' + remainingBudget.toFixed(2) + ' left!');
+    } else {
+        document.getElementById('low-budget-warning').style.display = 'none';
+    }
+}
+
+// Event listeners
+document.getElementById('total-budget').addEventListener('change', function () {
+    totalBudget = parseFloat(this.value) || 0;
+    updateBudgetLeft();
+    updateRemainingBudget();
+}); 
+document.getElementById('add-expense').addEventListener('click', addExpense);
+    document.getElementById('add-bill').addEventListener('click', addBill);
+    </script>
+</body>
+
+</html>
